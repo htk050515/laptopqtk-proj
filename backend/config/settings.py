@@ -41,6 +41,11 @@ INSTALLED_APPS = [
     # Third-party
     'rest_framework',
     'corsheaders',
+
+    'apps.users',
+    'apps.products',
+    'apps.orders',
+    'apps.payments',
 ]
 
 MIDDLEWARE = [
@@ -79,10 +84,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'laptopqtk_db',
+        'USER': 'laptopqtk_user',
+        'PASSWORD': 'postgres',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
+
 
 
 # Password validation
