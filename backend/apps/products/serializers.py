@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Laptop, Accessory, Order, OrderItem
+from django.db import transaction
 
 class LaptopSerializer(serializers.ModelSerializer):
     class Meta:
@@ -70,3 +71,53 @@ class OrderSerializer(serializers.ModelSerializer):
             'created_at',
             'items',
         ]
+
+class CreateOrderItemSerializer(serializers.Serializer):
+    product_type = serializers.ChoiceField(choices=OrderItem.PRODUCT_TYPE_CHOICES)
+    product_id = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+
+class CreateOrderSerializer(serializers.Serializer):
+    items = CreateOrderItemSerializer(many=True)
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        items_data = validated_data['items']
+
+        with transaction.atomic():
+            order = Order.objects.create(user=user)
+
+            total_price = 0
+
+            for item in items_data:
+                product_type = item['product_type']
+                product_id = item['product_id']
+                quantity = item['quantity']
+
+                if product_type == 'LAPTOP':
+                    product = Laptop.objects.get(id=product_id)
+                else:
+                    product = Accessory.objects.get(id=product_id)
+
+                if product.stock < quantity:
+                    raise serializers.ValidationError("Not enough stock")
+
+                product.stock -= quantity
+                product.save()
+
+                subtotal = product.price * quantity
+                total_price += subtotal
+
+                OrderItem.objects.create(
+                    order=order,
+                    product_type=product_type,
+                    product_id=product.id,
+                    product_name=product.name,
+                    price=product.price,
+                    quantity=quantity
+                )
+
+            order.total_price = total_price
+            order.save()
+
+        return order

@@ -4,6 +4,8 @@ from django.conf import settings
 
 
 
+
+
 class Laptop(models.Model):
     name = models.CharField(max_length=255)
     brand = models.CharField(max_length=100)
